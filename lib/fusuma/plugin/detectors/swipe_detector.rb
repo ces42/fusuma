@@ -12,6 +12,12 @@ module Fusuma
 
         FINGERS = [3, 4].freeze
         BASE_THRESHOLD = 25
+        BASE_DISTANCE = 10
+
+        def initialize
+          super
+          @dist_moved = {}
+        end
 
         # @param buffers [Array<Buffers::Buffer>]
         # @return [Events::Event] if event is detected
@@ -49,18 +55,34 @@ module Fusuma
             gesture_buffer.events.last.record.delta
           end
 
-          repeat_direction = Direction.new(move_x: delta.move_x, move_y: delta.move_y).to_s
+          direction = Direction.new(move_x: delta.move_x, move_y: delta.move_y).to_s
           repeat_quantity = Quantity.new(move_x: delta.move_x, move_y: delta.move_y).to_f
 
           repeat_index = create_repeat_index(gesture: type, finger: finger,
-            direction: repeat_direction, status: status)
+            direction: direction, status: status)
 
           if status == "update"
-            return unless moved?(repeat_quantity)
+            d = if ["right", "left"].include?(direction)
+              axis = :horiz
+              delta.move_x.abs()
+            elsif ["up", "down"].include?(direction)
+              axis = :vert
+              delta.move_y.abs()
+            else
+              0
+            end
+            # @dist_moved[repeat_index.cache_key] ||= Float::INFINITY
+            # @dist_moved[repeat_index.cache_key] += d
 
-            oneshot_direction = Direction.new(move_x: oneshot_move_x, move_y: oneshot_move_y).to_s
+            # puts @dist_moved[repeat_index.cache_key]
+            # return unless @dist_moved[repeat_index.cache_key] > distance(index: repeat_index)
+
+            return unless moved?(repeat_quantity)
+            # @dist_moved[repeat_index.cache_key] = 0
+
+            # direction = Direction.new(move_x: oneshot_move_x, move_y: oneshot_move_y).to_s
             oneshot_quantity = Quantity.new(move_x: oneshot_move_x, move_y: oneshot_move_y).to_f
-            oneshot_index = create_oneshot_index(gesture: type, finger: finger, direction: oneshot_direction)
+            oneshot_index = create_oneshot_index(gesture: type, finger: finger, direction: direction)
             if enough_oneshot_threshold?(index: oneshot_index, quantity: oneshot_quantity)
               return [
                 create_event(record: Events::Records::IndexRecord.new(
@@ -71,6 +93,9 @@ module Fusuma
                 ))
               ]
             end
+          elsif status == "end"
+            @dist_moved = {}
+            @wait_until = {}
           end
           create_event(record: Events::Records::IndexRecord.new(
             index: repeat_index, trigger: :repeat, args: delta.to_h
@@ -115,6 +140,17 @@ module Fusuma
 
         def enough_oneshot_threshold?(index:, quantity:)
           quantity > threshold(index: index)
+        end
+
+        def distance(index:)
+          @distance ||= {}
+          @distance[index.cache_key] ||= begin
+            keys_specific = Config::Index.new [*index.keys, "distance"]
+            keys_global = Config::Index.new ["distance", type]
+            config_value = Config.search(keys_specific) ||
+              Config.search(keys_global) || 0
+            BASE_DISTANCE * config_value
+          end
         end
 
         def threshold(index:)

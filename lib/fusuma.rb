@@ -134,7 +134,6 @@ module Fusuma
       end
 
       events = matched_detectors.each_with_object([]) do |detector, detected|
-        # Array(detector.detect(@buffers)).each { |e| detected << e }
         detected.concat(Array(detector.detect(@buffers)))
       end
 

@@ -39,6 +39,20 @@ module Fusuma
           @wait_until = event.time + interval(event).to_f
         end
 
+        def enough_distance?(event)
+          puts @direction
+          if @direction.nil? || @direction == event.record.index.keys[2].symbol then
+            @distance += event.record.args.
+          else
+            @direction = nil
+          end
+          false
+        end
+
+        def update_distance(event)
+          @direction = event.record.index.keys[2].symbol
+        end
+
         def interval(event)
           @interval_time ||= {}
           index = event.record.index
