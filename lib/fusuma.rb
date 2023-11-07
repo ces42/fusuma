@@ -181,7 +181,9 @@ module Fusuma
         executor = @executors.find { |e| e.executable?(event) }
         if executor
           # Check interval and execute
-          executor.enough_interval?(event) &&
+          executor.enough_distance?(event) &&
+            executor.enough_interval?(event) &&
+            executor.update_distance(event) &&
             executor.update_interval(event) &&
             executor.execute(event)
         end
