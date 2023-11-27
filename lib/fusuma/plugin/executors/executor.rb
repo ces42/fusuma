@@ -66,18 +66,16 @@ module Fusuma
             @distance = 0
           end
 
-          puts "  direction: #{direction}"
+          # puts "  direction: #{direction}"
           if [:right, :left].include?(@direction) then
-            puts "  args: #{event.record.args}"
             @distance += event.record.args[:move_x].abs() + 0.1
           elsif [:up, :down].include?(direction) then
-            puts "  args: #{event.record.args}"
             @distance += event.record.args[:move_y].abs() + 0.1
           else
             @direction = nil
             return false
           end
-          puts "  distance: #{@distance}"
+          # puts "  distance: #{@distance}"
           @distance > distance(event)
         end
 
