@@ -83,7 +83,7 @@ module Fusuma
     end
 
     def debug_events_with_options
-      prefix = "stdbuf -oL --"
+      prefix = "exec stdbuf -oL --"
       "#{prefix} #{debug_events_command} #{@libinput_options.join(" ")}".strip
     end
 
